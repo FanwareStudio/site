@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Celtya – RPG Dark Fantasy</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --crimson: #c0001a;
+    --crimson-bright: #ff1a35;
+    --crimson-dark: #7a0010;
+    --crimson-glow: rgba(192,0,26,0.6);
+    --black: #050505;
+    --black-deep: #0a0a0a;
+    --black-surface: #1a1010;
+    --white: #f5f0eb;
+    --white-dim: #c8bdb5;
+    --font-title: 'Cinzel Decorative', serif;
+    --font-display: 'Cinzel', serif;
+    --font-body: 'Crimson Text', serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--black); color: var(--white); font-family: var(--font-body); font-size: 18px; overflow-x: hidden; cursor: none; }
+
+  /* ═══════════════════════════════════════════════════
+     WELCOME SCREEN
+  ═══════════════════════════════════════════════════ */
+  #welcome-screen {
+    position: fixed; inset: 0; z-index: 99999;
+    background: radial-gradient(ellipse 100% 80% at 50% 50%, #1a0008 0%, #050505 70%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    overflow: hidden;
+    transition: opacity 1.2s ease, visibility 1.2s ease;
+  }
+  #welcome-screen.fade-out { opacity: 0; visibility: hidden; pointer-events: none; }
+
+  /* Rune rings */
+  .w-ring {
+    position: absolute; border-radius: 50%;
+    border: 1px solid rgba(192,0,26,0.15);
+    animation: w-spin linear infinite;
+  }
+  .w-ring:nth-child(1) { width: 600px; height: 600px; animation-duration: 40s; border-style: dashed; border-color: rgba(192,0,26,0.08); }
+  .w-ring:nth-child(2) { width: 450px; height: 450px; animation-duration: 28s; animation-direction: reverse; }
+  .w-ring:nth-child(3) { width: 300px; height: 300px; animation-duration: 18s; border-color: rgba(192,0,26,0.25); }
+  .w-ring:nth-child(4) { width: 180px; height: 180px; animation-duration: 10s; animation-direction: reverse; border-color: rgba(192,0,26,0.35); }
+  @keyframes w-spin { to { transform: rotate(360deg); } }
+
+  /* Rune symbols on ring */
+  .w-rune-text {
+    position: absolute; width: 500px; height: 500px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-title); font-size: 0.7rem;
+    color: rgba(192,0,26,0.3); letter-spacing: 22px;
+    animation: w-spin 35s linear infinite reverse;
+    white-space: nowrap;
+  }
+
+  /* Particles */
+  .w-particles { position: absolute; inset: 0; pointer-events: none; }
+  .w-particle {
+    position: absolute; border-radius: 50%; background: var(--crimson);
+    animation: w-float linear infinite; opacity: 0;
+  }
+  @keyframes w-float {
+    0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+    10% { opacity: 0.9; }
+    90% { opacity: 0.4; }
+    100% { transform: translateY(-10vh) translateX(var(--drift)); opacity: 0; }
+  }
+
+  /* Magic sparks — burst from center */
+  .w-spark {
+    position: absolute; top: 50%; left: 50%;
+    width: 2px; height: 2px; border-radius: 50%;
+    background: var(--crimson-bright);
+    animation: w-spark-burst linear forwards;
+    opacity: 0;
+  }
+  @keyframes w-spark-burst {
+    0%   { transform: translate(-50%,-50%) scale(0); opacity: 1; }
+    60%  { opacity: 0.8; }
+    100% { transform: translate(calc(-50% + var(--sx)), calc(-50% + var(--sy))) scale(0); opacity: 0; }
+  }
+
+  /* Central glow orb */
+  .w-orb {
+    position: absolute;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(192,0,26,0.35) 0%, rgba(192,0,26,0.08) 50%, transparent 70%);
+    animation: w-orb-pulse 2s ease-in-out infinite;
+    filter: blur(8px);
+  }
+  @keyframes w-orb-pulse {
+    0%,100% { transform: scale(1); opacity: 0.7; }
+    50%      { transform: scale(1.3); opacity: 1; }
+  }
+
+  /* Welcome text */
+  .w-content {
+    position: relative; z-index: 10;
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+    text-align: center;
+  }
+  .w-eyebrow {
+    font-family: var(--font-display); font-size: 0.65rem;
+    letter-spacing: 8px; text-transform: uppercase;
+    color: rgba(192,0,26,0.7);
+    opacity: 0; animation: w-fadein 0.8s ease 0.5s forwards;
+  }
+  .w-title {
+    font-family: var(--font-title); font-size: clamp(2rem, 8vw, 4rem);
+    color: var(--white); line-height: 1.2;
+    text-shadow: 0 0 40px rgba(192,0,26,0.6), 0 0 80px rgba(192,0,26,0.2);
+    opacity: 0; animation: w-fadein-up 1s ease 0.8s forwards;
+  }
+  .w-title em { color: var(--crimson); font-style: normal; }
+  .w-sub {
+    font-family: var(--font-body); font-size: 1.1rem; font-style: italic;
+    color: var(--white-dim); letter-spacing: 2px;
+    opacity: 0; animation: w-fadein-up 1s ease 1.2s forwards;
+  }
+  .w-line {
+    width: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--crimson), transparent);
+    animation: w-expand 1s ease 1.6s forwards;
+    box-shadow: 0 0 10px var(--crimson-glow);
+  }
+  .w-skip {
+    font-family: var(--font-display); font-size: 0.6rem;
+    letter-spacing: 4px; text-transform: uppercase;
+    color: rgba(192,0,26,0.45); cursor: pointer;
+    margin-top: 40px; border: 1px solid rgba(192,0,26,0.2);
+    padding: 10px 24px; transition: all 0.3s;
+    opacity: 0; animation: w-fadein 0.8s ease 2.2s forwards;
+  }
+  .w-skip:hover { color: var(--crimson); border-color: var(--crimson); }
+
+  @keyframes w-fadein { to { opacity: 1; } }
+  @keyframes w-fadein-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes w-expand { to { width: 280px; } }
+
+  /* Progress bar at bottom */
+  .w-progress {
+    position: absolute; bottom: 0; left: 0;
+    height: 2px; width: 0;
+    background: linear-gradient(90deg, var(--crimson-dark), var(--crimson), var(--crimson-bright));
+    animation: w-progress 9.5s linear 0.5s forwards;
+    box-shadow: 0 0 8px var(--crimson-glow);
+  }
+  @keyframes w-progress { to { width: 100%; } }
+
+  /* ═══════════════════════════════════════════════════
+     CURSOR
+  ═══════════════════════════════════════════════════ */
+  .cursor { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; width: 18px; height: 18px; border: 2px solid var(--crimson); border-radius: 50%; transform: translate(-50%,-50%); transition: transform 0.1s ease, border-color 0.2s; mix-blend-mode: screen; }
+  .cursor-dot { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; width: 5px; height: 5px; background: var(--crimson-bright); border-radius: 50%; transform: translate(-50%,-50%); }
+
+  /* SCROLL BAR */
+  .scroll-bar { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--crimson-dark), var(--crimson), var(--crimson-bright)); z-index: 1000; width: 0%; transition: width 0.1s linear; box-shadow: 0 0 10px var(--crimson-glow); }
+
+  /* NAV */
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 18px 5%; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(180deg, rgba(5,5,5,0.95) 0%, transparent 100%); backdrop-filter: blur(6px); border-bottom: 1px solid rgba(192,0,26,0.15); transition: background 0.4s; }
+  nav.scrolled { background: rgba(8,5,5,0.97); border-bottom-color: rgba(192,0,26,0.3); }
+  .nav-logo { font-family: var(--font-title); font-size: 1.5rem; color: var(--crimson); letter-spacing: 4px; text-shadow: 0 0 20px var(--crimson-glow); }
+  .nav-links { display: flex; gap: 36px; list-style: none; }
+  .nav-links a { font-family: var(--font-display); font-size: 0.8rem; letter-spacing: 2px; color: var(--white-dim); text-decoration: none; text-transform: uppercase; transition: color 0.3s; position: relative; }
+  .nav-links a::after { content: ''; position: absolute; bottom: -4px; left: 0; right: 0; height: 1px; background: var(--crimson); transform: scaleX(0); transition: transform 0.3s; }
+  .nav-links a:hover { color: var(--white); }
+  .nav-links a:hover::after { transform: scaleX(1); }
+  .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
+  .hamburger span { width: 26px; height: 2px; background: var(--crimson); transition: all 0.3s; }
+
+  /* HERO */
+  #hero { position: relative; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; overflow: hidden; background: radial-gradient(ellipse 80% 60% at 50% 40%, #1a0008 0%, var(--black) 70%); }
+  .particles { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .particle { position: absolute; width: 2px; height: 2px; background: var(--crimson); border-radius: 50%; animation: float-particle linear infinite; opacity: 0; }
+  @keyframes float-particle { 0% { transform: translateY(100vh) translateX(0); opacity: 0; } 10% { opacity: 0.8; } 90% { opacity: 0.5; } 100% { transform: translateY(-10vh) translateX(var(--drift)); opacity: 0; } }
+  .dragon-bg { position: absolute; bottom: 0; right: -5%; width: min(55vw, 700px); opacity: 0.06; pointer-events: none; animation: dragon-breathe 8s ease-in-out infinite; filter: drop-shadow(0 0 40px var(--crimson)); }
+  @keyframes dragon-breathe { 0%,100% { transform: translateY(0) scale(1); opacity: 0.06; } 50% { transform: translateY(-15px) scale(1.01); opacity: 0.09; } }
+  .dragon-bg-left { position: absolute; bottom: 0; left: -5%; width: min(40vw, 500px); opacity: 0.04; pointer-events: none; animation: dragon-breathe 10s ease-in-out infinite reverse; filter: drop-shadow(0 0 30px var(--crimson)) scaleX(-1); transform: scaleX(-1); }
+  .rune-circle { position: absolute; width: min(70vw, 700px); height: min(70vw, 700px); border: 1px solid rgba(192,0,26,0.1); border-radius: 50%; animation: rune-spin 60s linear infinite; }
+  .rune-circle::before { content: ''; position: absolute; inset: 20px; border: 1px dashed rgba(192,0,26,0.07); border-radius: 50%; animation: rune-spin 40s linear infinite reverse; }
+  .rune-circle::after { content: '✦ ᚱ ✦ ᚷ ✦ ᚠ ✦ ᚲ ✦ ᚷ ✦ ᚱ ✦ ᚠ ✦ ᚲ ✦'; position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; transform: translate(-50%,-50%); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; letter-spacing: 18px; color: rgba(192,0,26,0.2); white-space: nowrap; pointer-events: none; }
+  @keyframes rune-spin { to { transform: rotate(360deg); } }
+  .hero-eyebrow { font-family: var(--font-display); font-size: 0.7rem; letter-spacing: 6px; color: var(--crimson); text-transform: uppercase; margin-bottom: 20px; animation: fade-down 1s ease 0.2s both; }
+  .hero-title { font-family: var(--font-title); font-size: clamp(4.5rem, 14vw, 11rem); line-height: 0.9; color: var(--white); text-shadow: 0 0 60px rgba(192,0,26,0.5), 0 0 120px rgba(192,0,26,0.2); animation: fade-up 1.2s ease 0.4s both; letter-spacing: 8px; position: relative; z-index: 1; }
+  .hero-title span { color: var(--crimson); }
+  .hero-subtitle { font-family: var(--font-display); font-size: clamp(0.85rem, 2.5vw, 1.1rem); letter-spacing: 5px; color: var(--white-dim); text-transform: uppercase; margin-top: 16px; animation: fade-up 1.2s ease 0.6s both; }
+  .hero-desc { max-width: 580px; margin: 32px auto 0; font-size: 1.1rem; color: var(--white-dim); line-height: 1.8; animation: fade-up 1.2s ease 0.8s both; }
+  .hero-cta { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; margin-top: 48px; animation: fade-up 1.2s ease 1s both; }
+  .btn-primary { font-family: var(--font-display); font-size: 0.85rem; letter-spacing: 3px; text-transform: uppercase; color: var(--white); background: linear-gradient(135deg, var(--crimson-dark) 0%, var(--crimson) 100%); border: 1px solid var(--crimson); padding: 16px 40px; text-decoration: none; position: relative; overflow: hidden; transition: all 0.3s; clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%); }
+  .btn-primary::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, var(--crimson) 0%, var(--crimson-bright) 100%); opacity: 0; transition: opacity 0.3s; }
+  .btn-primary:hover { box-shadow: 0 0 30px var(--crimson-glow); transform: translateY(-2px); }
+  .btn-primary:hover::before { opacity: 1; }
+  .btn-primary span { position: relative; z-index: 1; }
+  .btn-secondary { font-family: var(--font-display); font-size: 0.85rem; letter-spacing: 3px; text-transform: uppercase; color: var(--white-dim); background: transparent; border: 1px solid rgba(192,0,26,0.4); padding: 16px 40px; text-decoration: none; transition: all 0.3s; clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%); }
+  .btn-secondary:hover { border-color: var(--crimson); color: var(--white); box-shadow: 0 0 20px rgba(192,0,26,0.3); transform: translateY(-2px); }
+  .scroll-hint { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; font-family: var(--font-display); font-size: 0.65rem; letter-spacing: 3px; color: rgba(192,0,26,0.5); text-transform: uppercase; animation: fade-in 2s ease 1.5s both; }
+  .scroll-hint-line { width: 1px; height: 50px; background: linear-gradient(180deg, var(--crimson), transparent); animation: scroll-pulse 2s ease-in-out infinite; }
+  @keyframes scroll-pulse { 0%,100% { opacity: 0.5; transform: scaleY(1); } 50% { opacity: 1; transform: scaleY(1.2); } }
+  .flame-line { position: absolute; bottom: 0; left: 0; right: 0; height: 200px; background: linear-gradient(0deg, rgba(192,0,26,0.12) 0%, transparent 100%); pointer-events: none; }
+
+  /* SECTIONS */
+  section { padding: 120px 5%; position: relative; }
+  .section-label { font-family: var(--font-display); font-size: 0.65rem; letter-spacing: 6px; text-transform: uppercase; color: var(--crimson); margin-bottom: 12px; display: flex; align-items: center; gap: 14px; }
+  .section-label::before, .section-label::after { content: ''; flex: 1; max-width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--crimson)); }
+  .section-label::after { background: linear-gradient(90deg, var(--crimson), transparent); }
+  .section-title { font-family: var(--font-title); font-size: clamp(2rem, 5vw, 3.5rem); color: var(--white); line-height: 1.1; margin-bottom: 20px; text-align: center; }
+  .section-title em { color: var(--crimson); font-style: normal; }
+  .section-subtitle { font-family: var(--font-body); font-size: 1.1rem; color: var(--white-dim); text-align: center; max-width: 600px; margin: 0 auto 70px; line-height: 1.8; }
+  .divider { width: 100%; height: 1px; background: linear-gradient(90deg, transparent, var(--crimson-dark), var(--crimson), var(--crimson-dark), transparent); margin: 0; }
+  .bg-accent { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; animation: accent-pulse 8s ease-in-out infinite; }
+  @keyframes accent-pulse { 0%,100% { opacity: 0.15; transform: scale(1); } 50% { opacity: 0.25; transform: scale(1.1); } }
+
+  /* FEATURES */
+  #features { background: linear-gradient(180deg, var(--black) 0%, var(--black-surface) 50%, var(--black) 100%); }
+  .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 2px; max-width: 1200px; margin: 0 auto; }
+  .feature-card { padding: 50px 36px; background: rgba(10,5,5,0.8); border: 1px solid rgba(192,0,26,0.1); position: relative; overflow: hidden; transition: all 0.4s; opacity: 0; transform: translateY(30px); }
+  .feature-card.visible { opacity: 1; transform: translateY(0); }
+  .feature-card::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 0%, rgba(192,0,26,0.07) 0%, transparent 70%); opacity: 0; transition: opacity 0.4s; }
+  .feature-card:hover { border-color: rgba(192,0,26,0.35); transform: translateY(-4px); }
+  .feature-card:hover::before { opacity: 1; }
+  .feature-icon { font-size: 2.5rem; margin-bottom: 24px; display: block; filter: drop-shadow(0 0 8px var(--crimson-glow)); }
+  .feature-name { font-family: var(--font-display); font-size: 1.1rem; letter-spacing: 2px; text-transform: uppercase; color: var(--white); margin-bottom: 14px; }
+  .feature-desc { font-family: var(--font-body); font-size: 1rem; color: var(--white-dim); line-height: 1.75; }
+  .feature-number { position: absolute; top: 20px; right: 24px; font-family: var(--font-title); font-size: 4rem; color: rgba(192,0,26,0.06); line-height: 1; }
+
+  /* ═══════════════════════════════════════════════════
+     LORE / TRAILER — BLOCO COMPLETO REESCRITO
+  ═══════════════════════════════════════════════════ */
+  #lore { background: var(--black); overflow: hidden; }
+  .lore-inner { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+  .lore-visual { position: relative; }
+
+  /* ── Botão "Trailer" acima do player (visível em TODAS as telas) ── */
+  .trailer-heading-btn {
+    display: flex; align-items: center; justify-content: center;
+    gap: 10px; margin-bottom: 18px;
+    font-family: var(--font-display); font-size: 0.8rem;
+    letter-spacing: 5px; text-transform: uppercase;
+    color: var(--crimson-bright); text-decoration: none;
+    border: 1px solid rgba(192,0,26,0.4); padding: 12px 28px;
+    background: rgba(192,0,26,0.06);
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+    position: relative; overflow: hidden;
+    transition: all 0.35s; cursor: pointer;
+    width: 100%;
+  }
+  .trailer-heading-btn::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(192,0,26,0.18) 0%, transparent 70%);
+    opacity: 0; transition: opacity 0.35s;
+  }
+  .trailer-heading-btn:hover { border-color: var(--crimson); color: var(--white); box-shadow: 0 0 24px rgba(192,0,26,0.35); }
+  .trailer-heading-btn:hover::before { opacity: 1; }
+  .trailer-heading-btn:active { transform: scale(0.97); }
+  .trailer-heading-btn .thb-icon { font-size: 1rem; transition: transform 0.3s; }
+  .trailer-heading-btn:hover .thb-icon { transform: scale(1.25); }
+  .trailer-heading-btn span { position: relative; z-index: 1; }
+
+  /* ── TRAILER CLICKABLE ANIMATION ── */
+  .trailer-wrap {
+    position: relative; width: 100%;
+    cursor: pointer;
+  }
+  .trailer-frame {
+    position: relative; width: 100%;
+    padding-top: 56.25%;
+    background: linear-gradient(145deg, #1a0008 0%, #0a0010 50%, #12000a 100%);
+    border: 1px solid rgba(192,0,26,0.3);
+    overflow: hidden;
+    box-shadow: 0 0 40px rgba(192,0,26,0.15);
+    animation: trailer-glow 4s ease-in-out infinite;
+    transition: border-color 0.3s;
+  }
+  .trailer-wrap:hover .trailer-frame { border-color: rgba(192,0,26,0.6); }
+  @keyframes trailer-glow {
+    0%,100% { box-shadow: 0 0 30px rgba(192,0,26,0.12); }
+    50%      { box-shadow: 0 0 60px rgba(192,0,26,0.25); }
+  }
+  .trailer-rune {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    font-family: var(--font-title); font-size: 9rem;
+    color: rgba(192,0,26,0.06);
+    animation: rune-spin 25s linear infinite;
+    pointer-events: none; user-select: none;
+  }
+  .trailer-particles { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .trailer-particle {
+    position: absolute; width: 2px; height: 2px;
+    background: var(--crimson); border-radius: 50%;
+    animation: float-particle linear infinite; opacity: 0;
+  }
+  .trailer-vignette {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 70% 60% at 50% 50%, rgba(192,0,26,0.08) 0%, rgba(0,0,0,0.5) 100%);
+    pointer-events: none;
+  }
+  .trailer-corner {
+    position: absolute; width: 24px; height: 24px;
+    border-color: var(--crimson); border-style: solid;
+    opacity: 0.65; pointer-events: none; z-index: 10;
+    transition: opacity 0.3s;
+  }
+  .trailer-wrap:hover .trailer-corner { opacity: 1; }
+  .trailer-corner-tl { top: -7px; left: -7px; border-width: 2px 0 0 2px; }
+  .trailer-corner-tr { top: -7px; right: -7px; border-width: 2px 2px 0 0; }
+  .trailer-corner-bl { bottom: -7px; left: -7px; border-width: 0 0 2px 2px; }
+  .trailer-corner-br { bottom: -7px; right: -7px; border-width: 0 2px 2px 0; }
+  .trailer-play-btn {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    width: 90px; height: 90px;
+    border: 2px solid var(--crimson);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--crimson); font-size: 2.2rem;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    z-index: 5;
+    animation: play-float 3s ease-in-out infinite;
+    transition: all 0.25s;
+    box-shadow: 0 0 30px rgba(192,0,26,0.4), inset 0 0 20px rgba(192,0,26,0.08);
+  }
+  .trailer-play-btn::before {
+    content: '';
+    position: absolute; inset: -8px;
+    border: 1px solid rgba(192,0,26,0.2);
+    border-radius: 50%;
+    animation: ring-expand 2.5s ease-out infinite;
+  }
+  .trailer-play-btn::after {
+    content: '';
+    position: absolute; inset: -18px;
+    border: 1px solid rgba(192,0,26,0.1);
+    border-radius: 50%;
+    animation: ring-expand 2.5s ease-out 0.5s infinite;
+  }
+  @keyframes ring-expand {
+    0%   { transform: scale(1); opacity: 0.6; }
+    100% { transform: scale(1.5); opacity: 0; }
+  }
+  @keyframes play-float {
+    0%,100% { transform: translate(-50%,-50%) scale(1); box-shadow: 0 0 30px rgba(192,0,26,0.4), inset 0 0 20px rgba(192,0,26,0.08); }
+    50%      { transform: translate(-50%,-52%) scale(1.04); box-shadow: 0 0 50px rgba(192,0,26,0.6), inset 0 0 25px rgba(192,0,26,0.12); }
+  }
+  .trailer-wrap:active .trailer-play-btn,
+  .trailer-play-btn.pressed {
+    transform: translate(-50%,-50%) scale(0.88) !important;
+    box-shadow: 0 0 15px rgba(192,0,26,0.8), inset 0 0 30px rgba(192,0,26,0.3) !important;
+    background: rgba(192,0,26,0.25) !important;
+    border-color: var(--crimson-bright) !important;
+    color: var(--crimson-bright) !important;
+    animation: none !important;
+    transition: all 0.08s !important;
+  }
+  .trailer-wrap:hover .trailer-play-btn {
+    animation: none;
+    transform: translate(-50%,-50%) scale(1.08);
+    box-shadow: 0 0 50px rgba(192,0,26,0.7), inset 0 0 25px rgba(192,0,26,0.15);
+    background: rgba(192,0,26,0.15);
+  }
+  .trailer-label {
+    position: absolute; bottom: 18px; left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-display); font-size: 0.65rem;
+    letter-spacing: 4px; text-transform: uppercase;
+    color: rgba(192,0,26,0.6);
+    z-index: 5; white-space: nowrap;
+    transition: color 0.3s;
+  }
+  .trailer-wrap:hover .trailer-label { color: var(--crimson); }
+
+  .lore-text blockquote { font-family: var(--font-body); font-size: 1.4rem; font-style: italic; color: var(--white-dim); line-height: 1.7; border-left: 2px solid var(--crimson); padding-left: 24px; margin-bottom: 28px; }
+  .lore-text p { font-size: 1.05rem; line-height: 1.9; color: var(--white-dim); margin-bottom: 18px; }
+  .lore-text strong { color: var(--crimson-bright); font-weight: 600; }
+
+  /* GALLERY */
+  #screenshots { background: linear-gradient(180deg, var(--black) 0%, #0d0005 50%, var(--black) 100%); overflow: hidden; }
+  .gallery-track { display: flex; gap: 20px; animation: gallery-scroll 30s linear infinite; width: max-content; margin-bottom: 20px; }
+  .gallery-track:nth-child(2) { animation-direction: reverse; animation-duration: 25s; }
+  .gallery-wrapper { overflow: hidden; }
+  .gallery-wrapper:hover .gallery-track { animation-play-state: paused; }
+  .gallery-item { width: 320px; height: 200px; background: var(--black-surface); border: 1px solid rgba(192,0,26,0.15); flex-shrink: 0; position: relative; overflow: hidden; transition: border-color 0.3s; clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px)); }
+  .gallery-item:hover { border-color: rgba(192,0,26,0.4); }
+  .gallery-item-bg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 4rem; animation: glow-pulse 4s ease-in-out infinite; }
+  .gallery-item-overlay { position: absolute; inset: 0; background: linear-gradient(145deg, transparent 40%, rgba(192,0,26,0.08) 100%); }
+  .gallery-label { position: absolute; bottom: 14px; left: 16px; font-family: var(--font-display); font-size: 0.7rem; letter-spacing: 2px; color: var(--white-dim); text-transform: uppercase; }
+  @keyframes gallery-scroll { to { transform: translateX(-50%); } }
+  @keyframes glow-pulse { 0%,100% { filter: drop-shadow(0 0 10px var(--crimson-glow)); } 50% { filter: drop-shadow(0 0 25px var(--crimson-glow)); } }
+
+  /* PLATFORMS */
+  #platforms { background: var(--black); text-align: center; }
+  .platforms-wrapper { display: flex; gap: 40px; justify-content: center; flex-wrap: wrap; margin-top: 60px; }
+  .platform-card { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 50px 60px; background: rgba(10,5,5,0.9); border: 1px solid rgba(192,0,26,0.15); text-decoration: none; transition: all 0.4s; position: relative; overflow: hidden; clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%); min-width: 240px; }
+  .platform-card::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 0%, rgba(192,0,26,0.1) 0%, transparent 60%); opacity: 0; transition: opacity 0.4s; }
+  .platform-card:hover { border-color: var(--crimson); transform: translateY(-6px); box-shadow: 0 20px 60px rgba(192,0,26,0.2); }
+  .platform-card:hover::before { opacity: 1; }
+  .platform-icon { width: 72px; height: 72px; filter: invert(1) sepia(1) saturate(3) hue-rotate(310deg) brightness(0.9); transition: filter 0.3s, transform 0.3s; }
+  .platform-card:hover .platform-icon { filter: invert(1) sepia(1) saturate(5) hue-rotate(310deg) brightness(1.1); transform: scale(1.1); }
+  .platform-name { font-family: var(--font-display); font-size: 1rem; letter-spacing: 3px; text-transform: uppercase; color: var(--white); }
+  .platform-sub { font-family: var(--font-body); font-size: 0.9rem; color: var(--crimson); letter-spacing: 1px; }
+
+  /* STATS TICKER */
+  .stats-bar { background: rgba(192,0,26,0.08); border-top: 1px solid rgba(192,0,26,0.2); border-bottom: 1px solid rgba(192,0,26,0.2); overflow: hidden; white-space: nowrap; padding: 16px 0; }
+  .stats-track { display: inline-flex; gap: 80px; animation: ticker 20s linear infinite; }
+  .stat-item { font-family: var(--font-display); font-size: 0.75rem; letter-spacing: 3px; text-transform: uppercase; color: var(--white-dim); display: flex; align-items: center; gap: 14px; }
+  .stat-item span { color: var(--crimson); font-size: 1rem; }
+  @keyframes ticker { to { transform: translateX(-50%); } }
+
+  /* SOCIAL */
+  .social-row { display: flex; flex-direction: column; gap: 14px; max-width: 560px; margin: 0 auto; }
+  .social-btn { display: flex; align-items: center; gap: 20px; padding: 20px 28px; background: rgba(10,5,5,0.85); border: 1px solid rgba(192,0,26,0.18); text-decoration: none; position: relative; overflow: hidden; transition: all 0.4s; clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%); }
+  .social-btn:hover { border-color: var(--crimson); transform: translateX(6px); box-shadow: -4px 0 0 var(--crimson), 0 10px 40px rgba(192,0,26,0.18); }
+  .social-glow { position: absolute; inset: 0; background: radial-gradient(ellipse at 0% 50%, rgba(192,0,26,0.1) 0%, transparent 60%); opacity: 0; transition: opacity 0.4s; }
+  .social-btn:hover .social-glow { opacity: 1; }
+  .social-icon-wrap { width: 52px; height: 52px; border: 1px solid rgba(192,0,26,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--crimson); transition: all 0.4s; background: rgba(192,0,26,0.06); }
+  .social-btn:hover .social-icon-wrap { background: rgba(192,0,26,0.15); border-color: var(--crimson); box-shadow: 0 0 14px var(--crimson-glow); }
+  .social-info { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+  .social-name { font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 2px; text-transform: uppercase; color: var(--white); }
+  .social-handle { font-family: var(--font-body); font-size: 0.9rem; color: var(--crimson); letter-spacing: 1px; }
+  .social-arrow { font-size: 1.3rem; color: rgba(192,0,26,0.4); transition: all 0.4s; margin-left: auto; }
+  .social-btn:hover .social-arrow { color: var(--crimson); transform: translateX(4px); }
+  .social-btn--ig:hover { border-color: #e1306c; box-shadow: -4px 0 0 #e1306c, 0 10px 40px rgba(225,48,108,0.15); }
+  .social-btn--ig:hover .social-icon-wrap { border-color: #e1306c; box-shadow: 0 0 14px rgba(225,48,108,0.5); color: #e1306c; }
+  .social-btn--x:hover { border-color: #aaa; box-shadow: -4px 0 0 #aaa, 0 10px 40px rgba(170,170,170,0.1); }
+  .social-btn--x:hover .social-icon-wrap { border-color: #aaa; box-shadow: 0 0 14px rgba(200,200,200,0.3); color: #ccc; }
+  .social-btn--yt:hover { border-color: #ff0000; box-shadow: -4px 0 0 #ff0000, 0 10px 40px rgba(255,0,0,0.15); }
+  .social-btn--yt:hover .social-icon-wrap { border-color: #ff0000; box-shadow: 0 0 14px rgba(255,0,0,0.5); color: #ff3333; }
+
+  /* FOOTER */
+  footer { background: var(--black-deep); border-top: 1px solid rgba(192,0,26,0.15); padding: 60px 5% 40px; text-align: center; }
+  .footer-logo { font-family: var(--font-title); font-size: 2.5rem; color: var(--crimson); letter-spacing: 6px; text-shadow: 0 0 30px var(--crimson-glow); margin-bottom: 20px; display: block; }
+  .footer-tagline { font-family: var(--font-display); font-size: 0.75rem; letter-spacing: 4px; text-transform: uppercase; color: var(--white-dim); margin-bottom: 40px; }
+  .footer-links { display: flex; gap: 36px; justify-content: center; flex-wrap: wrap; margin-bottom: 40px; list-style: none; }
+  .footer-links a { font-family: var(--font-display); font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--white-dim); text-decoration: none; transition: color 0.3s; }
+  .footer-links a:hover { color: var(--crimson); }
+  .footer-bottom { font-family: var(--font-body); font-size: 0.85rem; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.05); padding-top: 30px; margin-top: 20px; }
+
+  /* ANIMATIONS */
+  @keyframes fade-up { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fade-down { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+  .reveal { opacity: 0; transform: translateY(40px); transition: opacity 0.8s ease, transform 0.8s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.35s; }
+
+  /* MOBILE MENU */
+  .mobile-menu { display: none; position: fixed; inset: 0; background: rgba(5,5,5,0.98); z-index: 99; flex-direction: column; align-items: center; justify-content: center; gap: 40px; }
+  .mobile-menu.open { display: flex; }
+  .mobile-menu a { font-family: var(--font-display); font-size: 1.5rem; letter-spacing: 4px; text-transform: uppercase; color: var(--white); text-decoration: none; transition: color 0.3s; }
+  .mobile-menu a:hover { color: var(--crimson); }
+
+  /* RESPONSIVE */
+  @media (max-width: 1024px) {
+    .lore-inner { grid-template-columns: 1fr; gap: 50px; }
+    .lore-visual { max-width: 600px; margin: 0 auto; }
+    .social-row { max-width: 100%; padding: 0 2%; }
+    .social-btn { padding: 18px 24px; gap: 16px; }
+    .social-icon-wrap { width: 48px; height: 48px; }
+    .social-name { font-size: 0.85rem; }
+    .social-handle { font-size: 0.85rem; }
+    /* Trailer button full-width on tablet */
+    .trailer-heading-btn { clip-path: none; border-radius: 2px; }
+  }
+
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+    .hamburger { display: flex; }
+    section { padding: 80px 5%; }
+    .hero-title { font-size: clamp(3.5rem, 18vw, 6rem); }
+    .features-grid { grid-template-columns: 1fr; }
+    .platforms-wrapper { flex-direction: column; align-items: center; }
+    .platform-card { min-width: unset; width: 100%; max-width: 400px; }
+    body { cursor: auto; }
+    .cursor, .cursor-dot { display: none; }
+    /* Trailer heading btn mobile */
+    .trailer-heading-btn {
+      clip-path: none; border-radius: 2px;
+      font-size: 0.85rem; letter-spacing: 4px;
+      padding: 14px 20px;
+    }
+    /* Play button slightly smaller on mobile so it's usable */
+    .trailer-play-btn { width: 64px; height: 64px; font-size: 1.6rem; }
+    .social-row { max-width: 100%; gap: 12px; padding: 0; }
+    .social-btn { padding: 16px 18px; gap: 14px; clip-path: none; border-radius: 2px; transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s; }
+    .social-btn:hover, .social-btn:active { transform: scale(1.02); }
+    .social-btn--ig:hover, .social-btn--ig:active { box-shadow: 0 4px 20px rgba(225,48,108,0.25); }
+    .social-btn--x:hover, .social-btn--x:active { box-shadow: 0 4px 20px rgba(170,170,170,0.15); }
+    .social-btn--yt:hover, .social-btn--yt:active { box-shadow: 0 4px 20px rgba(255,0,0,0.25); }
+    .social-icon-wrap { width: 44px; height: 44px; flex-shrink: 0; }
+    .social-icon-wrap svg { width: 22px; height: 22px; }
+    .social-name { font-size: 0.82rem; letter-spacing: 1.5px; }
+    .social-handle { font-size: 0.82rem; }
+    .social-arrow { font-size: 1.1rem; }
+  }
+
+  @media (max-width: 480px) {
+    .hero-title { font-size: clamp(3rem, 20vw, 5rem); letter-spacing: 4px; }
+    .hero-cta { flex-direction: column; align-items: center; }
+    .btn-primary, .btn-secondary { width: 100%; max-width: 280px; text-align: center; }
+    .trailer-heading-btn { font-size: 0.78rem; letter-spacing: 3px; padding: 13px 16px; }
+    .social-btn { padding: 14px 16px; gap: 12px; }
+    .social-icon-wrap { width: 40px; height: 40px; }
+    .social-icon-wrap svg { width: 20px; height: 20px; }
+    .social-name { font-size: 0.78rem; letter-spacing: 1px; }
+    .social-handle { font-size: 0.78rem; }
+    .social-info { gap: 2px; }
+  }
+
+  @media (max-width: 360px) {
+    .trailer-heading-btn { font-size: 0.72rem; letter-spacing: 2px; padding: 11px 12px; }
+    .social-btn { padding: 12px 14px; gap: 10px; }
+    .social-icon-wrap { width: 36px; height: 36px; }
+    .social-icon-wrap svg { width: 18px; height: 18px; }
+    .social-name { font-size: 0.72rem; }
+    .social-handle { font-size: 0.72rem; }
+    .social-arrow { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     WELCOME SCREEN
+═══════════════════════════════════════════════ -->
+<div id="welcome-screen">
+  <!-- Rune rings -->
+  <div class="w-ring"></div>
+  <div class="w-ring"></div>
+  <div class="w-ring"></div>
+  <div class="w-ring"></div>
+  <div class="w-rune-text">ᚱ &nbsp; ✦ &nbsp; ᚷ &nbsp; ✦ &nbsp; ᚠ &nbsp; ✦ &nbsp; ᚲ &nbsp; ✦ &nbsp; ᚱ &nbsp; ✦ &nbsp; ᚷ &nbsp; ✦ &nbsp; ᚠ &nbsp; ✦ &nbsp; ᚲ</div>
+
+  <!-- Floating particles -->
+  <div class="w-particles" id="wParticles"></div>
+
+  <!-- Central glow -->
+  <div class="w-orb"></div>
+
+  <!-- Sparks container -->
+  <div id="wSparks" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
+
+  <!-- Text -->
+  <div class="w-content">
+    <div class="w-eyebrow">✦ &nbsp; O Portal se Abre &nbsp; ✦</div>
+    <h1 class="w-title">Seja Bem-Vindo<br><em>Viajante</em></h1>
+    <p class="w-sub">A escuridão aguarda os corajosos…</p>
+    <div class="w-line"></div>
+    <div class="w-skip" id="wSkip" role="button" tabindex="0">Entrar no Mundo ▶</div>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="w-progress"></div>
+</div>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="scroll-bar" id="scrollBar"></div>
+
+<!-- NAV -->
+<nav id="navbar">
+  <div class="nav-logo">FanWare</div>
+  <ul class="nav-links">
+    <li><a href="#features">Gameplay</a></li>
+    <li><a href="#lore">Trailer</a></li>
+    <li><a href="#screenshots">Mundo</a></li>
+    <li><a href="#platforms">Jogar</a></li>
+    <li><a href="#social">Comunidade</a></li>
+  </ul>
+  <div class="hamburger" id="hamburger">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#features" onclick="closeMobile()">Gameplay</a>
+  <a href="#lore" onclick="closeMobile()">Trailer</a>
+  <a href="#screenshots" onclick="closeMobile()">Mundo</a>
+  <a href="#platforms" onclick="closeMobile()">Jogar</a>
+  <a href="#social" onclick="closeMobile()">Comunidade</a>
+</div>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="particles" id="particles"></div>
+  <div class="rune-circle"></div>
+  <svg class="dragon-bg" viewBox="0 0 400 300" fill="currentColor" color="#c0001a" xmlns="http://www.w3.org/2000/svg">
+    <path d="M380 240 C360 230 340 210 320 220 C310 225 300 240 280 235 C260 230 250 210 230 215 C210 220 200 240 180 235 C160 230 150 200 130 195 C110 190 90 210 70 205 C50 200 35 180 20 170 C30 160 50 165 60 155 C70 145 65 125 80 120 C95 115 110 130 125 125 C140 120 145 100 160 98 C175 96 185 110 200 108 C215 106 220 90 235 88 C255 85 265 105 280 100 C295 95 300 75 320 72 C340 69 350 88 365 90 C375 91 385 80 390 85 C392 100 380 120 375 140 C370 160 380 175 385 185 C390 195 395 220 380 240Z"/>
+    <path d="M365 90 C375 70 385 50 370 40 C360 32 345 45 350 60Z"/>
+    <path d="M320 72 C325 55 315 35 300 38 C288 40 285 58 295 65Z"/>
+    <ellipse cx="370" cy="78" rx="5" ry="4" fill="rgba(192,0,26,0.8)"/>
+  </svg>
+  <svg class="dragon-bg-left" viewBox="0 0 400 300" fill="currentColor" color="#c0001a" xmlns="http://www.w3.org/2000/svg">
+    <path d="M20 240 C40 230 60 210 80 220 C90 225 100 240 120 235 C140 230 150 210 170 215 C190 220 200 240 220 235 C240 230 250 200 270 195 C290 190 310 210 330 205 C350 200 365 180 380 170 C370 160 350 165 340 155 C330 145 335 125 320 120 C305 115 290 130 275 125 C260 120 255 100 240 98 C225 96 215 110 200 108 C185 106 180 90 165 88 C145 85 135 105 120 100 C105 95 100 75 80 72 C60 69 50 88 35 90 C25 91 15 80 10 85 C8 100 20 120 25 140 C30 160 20 175 15 185 C10 195 5 220 20 240Z"/>
+  </svg>
+  <div class="flame-line"></div>
+  <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;">
+    <h1 class="hero-title">CELT<span>Y</span>A</h1>
+    <br>
+    <p class="hero-subtitle">RPG Dark Fantasy</p>
+    <br>
+    <p class="hero-eyebrow">&#10022; Seja bem-vindo a um mundo fantástico &#10022;</p>
+    <div class="hero-cta">
+      <a href="#platforms" class="btn-primary"><span>&#9654; Obter o Jogo</span></a>
+      <a href="#lore" class="btn-secondary">Conhecer o Jogo</a>
+    </div>
+  </div>
+  <div class="scroll-hint">
+    <span>Descer</span>
+    <div class="scroll-hint-line"></div>
+  </div>
+</section>
+
+<!-- STATS TICKER -->
+<div class="stats-bar">
+  <div class="stats-track">
+    <span class="stat-item"><span>&#9876;</span> Batalhas Épicas</span>
+    <span class="stat-item"><span>&#x1F409;</span> Chefes Lendários</span>
+    <span class="stat-item"><span>&#x1F5FA;</span> Mundo Vasto</span>
+    <span class="stat-item"><span>&#x2697;</span> Magias Sombrias</span>
+    <span class="stat-item"><span>&#x1F3F0;</span> Fortalezas para Explorar</span>
+    <span class="stat-item"><span>&#x1F4DC;</span> Lore Profundo</span>
+    <span class="stat-item"><span>&#x1F525;</span> Decisões que Moldam o Destino</span>
+    <span class="stat-item"><span>&#9876;</span> Batalhas Épicas</span>
+    <span class="stat-item"><span>&#x1F409;</span> Chefes Lendários</span>
+    <span class="stat-item"><span>&#x1F5FA;</span> Mundo Vasto</span>
+    <span class="stat-item"><span>&#x2697;</span> Magias Sombrias</span>
+    <span class="stat-item"><span>&#x1F3F0;</span> Fortalezas para Explorar</span>
+    <span class="stat-item"><span>&#x1F4DC;</span> Lore Profundo</span>
+    <span class="stat-item"><span>&#x1F525;</span> Decisões que Moldam o Destino</span>
+  </div>
+</div>
+<div class="divider"></div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="bg-accent" style="width:400px;height:400px;background:var(--crimson-dark);top:-100px;right:-100px;"></div>
+  <p class="section-label" style="justify-content:center;">O Jogo</p>
+  <h2 class="section-title reveal">O que aguarda em <em>Celtya</em></h2>
+  <p class="section-subtitle reveal reveal-delay-1">Um RPG de fantasia sombria forjado para aqueles que buscam desafio, mistério e consequências reais para suas escolhas.</p>
+  <div class="features-grid">
+    <div class="feature-card reveal"><span class="feature-number">01</span><span class="feature-icon">&#x2694;&#xFE0F;</span><h3 class="feature-name">Combate</h3><p class="feature-desc">Sistema de combate baseado em turno, nível e equipamentos são fundamentais. Cada golpe e habilidade importa — pois as criaturas do mundo serão desafiadoras.</p></div>
+    <div class="feature-card reveal reveal-delay-1"><span class="feature-number">02</span><span class="feature-icon">&#x1F409;</span><h3 class="feature-name">Criaturas</h3><p class="feature-desc">Dragões, Trolls, Bestas gigantes, Demônios de outro plano. Cada encontro é único e imprevisível.</p></div>
+    <div class="feature-card reveal reveal-delay-2"><span class="feature-number">03</span><span class="feature-icon">&#x1F52E;</span><h3 class="feature-name">Magia e Habilidades</h3><p class="feature-desc">Suba de nível para ficar mais forte. Quanto mais alto for seu nível, mais magias e habilidades irá aprender.</p></div>
+    <div class="feature-card reveal"><span class="feature-number">04</span><span class="feature-icon">&#x1F5FA;&#xFE0F;</span><h3 class="feature-name">Mundo Vivo</h3><p class="feature-desc">O mundo de Celtya é perigoso, tudo aqui quer um pedaço seu — criaturas vagam pelo mundo à procura de carne fresca. Cuidado!</p></div>
+    <div class="feature-card reveal reveal-delay-1"><span class="feature-number">05</span><span class="feature-icon">&#x1F4DC;</span><h3 class="feature-name">Lore</h3><p class="feature-desc">Séculos de história enterrados em guerras e ruínas escondidas, grimórios secretos e memórias de entidades milenares. A verdade de Celtya é mais sombria do que parece.</p></div>
+    <div class="feature-card reveal reveal-delay-2"><span class="feature-number">06</span><span class="feature-icon">&#x1F3F0;</span><h3 class="feature-name">Territórios</h3><p class="feature-desc">Explore cada território do mapa, pois neste mundo há muitos tesouros escondidos, segredos perdidos, histórias sombrias...</p></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- LORE / TRAILER -->
+<section id="lore">
+  <div class="bg-accent" style="width:500px;height:500px;background:var(--crimson-dark);bottom:-150px;left:-150px;"></div>
+  <div class="lore-inner">
+
+    <div class="lore-visual reveal" id="trailerBlock">
+      <!-- Built by JS below -->
+    </div>
+
+    <div class="lore-text reveal reveal-delay-1">
+      <p class="section-label">A História</p>
+      <h2 class="section-title" style="text-align:left;font-size:clamp(1.8rem,3.5vw,2.8rem);">A Alvorada <em>da Espada</em></h2>
+      <br>
+      <blockquote>"A noite está caindo."</blockquote>
+      <p>Celtya gira em torno de um mundo de fantasia sombria inspirado em mitologia celta e contos arturianos. O mundo teve paz com o reinado de Arthur, até a sua morte... Causando a <strong>Grande Fenda</strong>.</p>
+      <p>O equilíbrio antigo entre forças naturais e místicas foi corrompido. As terras, antes sagradas, estão sendo tomadas por uma escuridão crescente. Algo despertou nas raízes do mundo. Criaturas sombrias dominaram Celtya, e a grande escuridão saiu de sua prisão. E os deuses... simplesmente <strong>desapareceram</strong>.</p>
+      <p>Você é o único capaz de descobrir o que está por trás da escuridão da noite — mas cada resposta que encontrar tornará o caminho mais sombrio do que imagina.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- SCREENSHOTS -->
+<section id="screenshots" style="padding-left:0;padding-right:0;">
+  <div style="padding:0 5% 60px;">
+    <p class="section-label" style="justify-content:center;">O Mundo</p>
+    <h2 class="section-title reveal">Vislumbres de <em>Celtya</em></h2>
+    <p class="section-subtitle reveal reveal-delay-1">Cada canto do mundo guarda segredos, perigos e beleza corrompida esperando para ser descoberta.</p>
+  </div>
+  <div class="gallery-wrapper">
+    <div class="gallery-track">
+      <div class="gallery-item"><div class="gallery-item-bg" style="background:linear-gradient(135deg,#1a0008,#0d0010);">&#x1F3F0;</div><div class="gallery-item-overlay"></div><div class="gallery-label">Reino de Camelot</div></div>
+      <div class="gallery-item"><div class="gallery-item-bg" style="background:linear-gradient(135deg,#0d0510,#180010);">&#x1F409;</div><div class="gallery-item-overlay"></div><div class="gallery-label">Covil do Dragão</div></div>
+      <div class="gallery-item"><div class="gallery-item-bg" style="background:linear-gradient(135deg,#100005,#1a0510);">&#x1F319;</div><div class="gallery-item-overlay"></div><div class="gallery-label">Floresta Sombria</div></div>
+      <div class="gallery-item"><div class="gallery-item-bg" style="background:linear-gradient(135deg,#0a0a18,#180018);">&#x2697;&#xFE0F;</div><div class="gallery-item-overlay"></div><div class="gallery-label">Torre dos Magos</div></div>
+      <div class="gallery-item"><div class="gallery-item-bg" style="background:linear-gradient(135deg,#18000a,#0d1000);">&#x2694;&#xFE0F;</div><div class="gallery-item-overlay"></div><div class="gallery-label">Batalha dos Reinos</div></div>
+      <div class="gallery-item"><div class="gallery-item-bg" style="background:linear-gradient(135deg,#050510,#100518);">&#x1F30A;</div><div class="gallery-item-overlay"></div><div class="gallery-label">Mar das Almas</div></div>
+      <div class="gallery-item"><div class="gallery-item-bg" style="background:linear-gradient(135deg,#1a0008,#0d0010);">&#x1F3F0;</div><div class="gallery-item-overlay"></div><div class="gallery-label">Reino de Camelot</div></div>
+      <div class="gallery-item"><div class="gallery-item-bg" style="background:linear-gradient(135deg,#0d0510,#180010);">&#x1F409;</div><div class="gallery-item-overlay"></div><div class="gallery-label">Covil do Dragão</div></div>
+      <div class="gallery-item"><div class="gallery-item-bg" style="background:linear-gradient(135deg,#100005,#1a0510);">&#x1F319;</div><div class="gallery-item-overlay"></div><div class="gallery-label">Floresta Sombria</div></div>
+      <div class="gallery-item"><div class="gallery-item-bg" style="background:linear-gradient(135deg,#0a0a18,#180018);">&#x2697;&#xFE0F;</div><div class="gallery-item-overlay"></div><div class="gallery-label">Torre dos Magos</div></div>
+      <div class="gallery-item"><div class="gallery-item-bg" style="background:linear-gradient(135deg,#18000a,#0d1000);">&#x2694;&#xFE0F;</div><div class="gallery-item-overlay"></div><div class="gallery-label">Batalha dos Reinos</div></div>
+      <div class="gallery-item"><div class="gallery-item-bg" style="background:linear-gradient(135deg,#050510,#100518);">&#x1F30A;</div><div class="gallery-item-overlay"></div><div class="gallery-label">Mar das Almas</div></div>
+    </div>
+    <div class="gallery-track">
+      <div class="gallery-item"><div class="gallery-item-bg" style="background:linear-gradient(135deg,#150010,#0a0a00);">&#x26F0;&#xFE0E;</div><div class="gallery-item-overlay"></div><div class="gallery-label">Ruínas Antigas</div></div>
+      <div class="gallery-item"><div class="gallery-item-bg" style="background:linear-gradient(135deg,#100010,#1a0500);">&#x2600;&#xFE0F;</div><div class="gallery-item-overlay"></div><div class="gallery-label">Deserto Esquecido</div></div>
+      <div class="gallery-item"><div class="gallery-item-bg" style="background:linear-gradient(135deg,#080018,#150005);">&#x1F480;</div><div class="gallery-item-overlay"></div><div class="gallery-label">Torre do Necromante</div></div>
+      <div class="gallery-item"><div class="gallery-item-bg" style="background:linear-gradient(135deg,#180005,#050518);">&#x1F33F;</div><div class="gallery-item-overlay"></div><div class="gallery-label">Pantano Venenoso</div></div>
+      <div class="gallery-item"><div class="gallery-item-bg" style="background:linear-gradient(135deg,#0a0000,#1a1000);">&#x1F3D4;</div><div class="gallery-item-overlay"></div><div class="gallery-label">Montanhas Proibidas</div></div>
+      <div class="gallery-item"><div class="gallery-item-bg" style="background:linear-gradient(135deg,#18000f,#100018);">&#x1F5FB;</div><div class="gallery-item-overlay"></div><div class="gallery-label">Geleiras Mortais</div></div>
+      <div class="gallery-item"><div class="gallery-item-bg" style="background:linear-gradient(135deg,#150010,#0a0a00);">&#x26F0;&#xFE0E;</div><div class="gallery-item-overlay"></div><div class="gallery-label">Ruínas Antigas</div></div>
+      <div class="gallery-item"><div class="gallery-item-bg" style="background:linear-gradient(135deg,#100010,#1a0500);">&#x2600;&#xFE0F;</div><div class="gallery-item-overlay"></div><div class="gallery-label">Deserto Esquecido</div></div>
+      <div class="gallery-item"><div class="gallery-item-bg" style="background:linear-gradient(135deg,#080018,#150005);">&#x1F480;</div><div class="gallery-item-overlay"></div><div class="gallery-label">Torre do Necromante</div></div>
+      <div class="gallery-item"><div class="gallery-item-bg" style="background:linear-gradient(135deg,#180005,#050518);">&#x1F33F;</div><div class="gallery-item-overlay"></div><div class="gallery-label">Pantano Venenoso</div></div>
+      <div class="gallery-item"><div class="gallery-item-bg" style="background:linear-gradient(135deg,#0a0000,#1a1000);">&#x1F3D4;</div><div class="gallery-item-overlay"></div><div class="gallery-label">Montanhas Proibidas</div></div>
+      <div class="gallery-item"><div class="gallery-item-bg" style="background:linear-gradient(135deg,#18000f,#100018);">&#x1F5FB;</div><div class="gallery-item-overlay"></div><div class="gallery-label">Geleiras Mortais</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- PLATFORMS -->
+<section id="platforms">
+  <p class="section-label" style="justify-content:center;">Jogue agora!</p>
+  <h2 class="section-title reveal">Sua jornada começa <em>EM BREVE</em></h2>
+  <p class="section-subtitle reveal reveal-delay-1">A demonstração do jogo estará disponível em breve no itch.io</p>
+  <div class="platforms-wrapper">
+    <a href="https://fanware.itch.io/" target="_blank" rel="noopener noreferrer" class="platform-card reveal reveal-delay-1">
+      <svg class="platform-icon" viewBox="0 0 245 220" xmlns="http://www.w3.org/2000/svg">
+        <path d="M31.99 3.47C21.77 9.24 0 35.99 0 41.48v9.52c0 13.1 12.26 24.52 23.32 24.52 13.34 0 24.48-11.2 24.48-24.52 0 13.32 10.68 24.52 24.02 24.52s23.52-11.2 23.52-24.52c0 13.32 11.1 24.52 24.44 24.52h.22c13.34 0 24.44-11.2 24.44-24.52 0 13.32 10.18 24.52 23.52 24.52s24.02-11.2 24.02-24.52c0 13.32 11.14 24.52 24.48 24.52 11.06 0 23.32-11.42 23.32-24.52V41.48c0-5.49-21.77-32.24-31.99-38.01C225.16.53 47.07.53 31.99 3.47z"/>
+        <path d="M221.26 80.54c-4.7 2.25-9.71 3.46-15.1 3.46-8.12 0-15.38-2.94-20.96-8.2-5.44 5.26-12.72 8.2-20.86 8.2-8.14 0-15.4-2.94-20.96-8.2-5.44 5.26-12.7 8.2-20.84 8.2h-.18c-8.14 0-15.42-2.94-20.86-8.2-5.56 5.26-12.84 8.2-20.98 8.2-8.12 0-15.38-2.94-20.94-8.2-5.58 5.26-12.84 8.2-20.96 8.2-5.39 0-10.4-1.21-15.1-3.46-1.72-.82-3.28-.38-3.28 1.56v113.22c0 12.6 8.44 24.62 22.62 24.62H201.9c14.18 0 22.62-12.02 22.62-24.62V82.1c0-1.94-1.54-2.38-3.26-1.56zM151.46 189.1H93.82v-46.22h57.64v46.22zm16.72-66.86H76.8V99.48h91.38v22.76z"/>
+      </svg>
+      <span class="platform-name">itch.io</span>
+      <span class="platform-sub">(Demo Em Breve)</span>
+    </a>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- SOCIAL -->
+<section id="social" style="background:linear-gradient(180deg,var(--black) 0%,#0d0005 50%,var(--black) 100%);text-align:center;">
+  <div class="bg-accent" style="width:350px;height:350px;background:var(--crimson-dark);top:-80px;left:50%;transform:translateX(-50%);"></div>
+  <p class="section-label" style="justify-content:center;">Comunidade</p>
+  <h2 class="section-title reveal">Siga a <em>Jornada</em></h2>
+  <p class="section-subtitle reveal reveal-delay-1">Acompanhe o desenvolvimento, veja novidades em primeira mão e faça parte da comunidade de Celtya.</p>
+  <div class="social-row reveal reveal-delay-2">
+    <a href="https://www.instagram.com/fanwarestudio/" target="_blank" rel="noopener noreferrer" class="social-btn social-btn--ig">
+      <div class="social-icon-wrap"><svg viewBox="0 0 24 24" fill="currentColor" width="26" height="26"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg></div>
+      <div class="social-info"><span class="social-name">Instagram</span><span class="social-handle">@celtya_game</span></div>
+      <span class="social-arrow">&#8594;</span><div class="social-glow"></div>
+    </a>
+    <a href="https://x.com/FanWareStudio" target="_blank" rel="noopener noreferrer" class="social-btn social-btn--x">
+      <div class="social-icon-wrap"><svg viewBox="0 0 24 24" fill="currentColor" width="26" height="26"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.745l7.73-8.835L1.254 2.25H8.08l4.259 5.632L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></div>
+      <div class="social-info"><span class="social-name">X / Twitter</span><span class="social-handle">@celtya_game</span></div>
+      <span class="social-arrow">&#8594;</span><div class="social-glow"></div>
+    </a>
+    <a href="https://www.youtube.com/@FanwareStudio" target="_blank" rel="noopener noreferrer" class="social-btn social-btn--yt">
+      <div class="social-icon-wrap"><svg viewBox="0 0 24 24" fill="currentColor" width="26" height="26"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></div>
+      <div class="social-info"><span class="social-name">YouTube</span><span class="social-handle">Celtya RPG</span></div>
+      <span class="social-arrow">&#8594;</span><div class="social-glow"></div>
+    </a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<div class="divider"></div>
+<footer>
+  <span class="footer-logo">CELTYA</span>
+  <p class="footer-tagline">RPG Dark Fantasy — Um mundo de magia e sombras</p>
+  <ul class="footer-links">
+    <li><a href="#hero">Início</a></li>
+    <li><a href="#features">Gameplay</a></li>
+    <li><a href="#lore">Trailer</a></li>
+    <li><a href="#screenshots">Mundo</a></li>
+    <li><a href="#platforms">Jogar</a></li>
+  </ul>
+  <div class="footer-bottom">&#169; 2025 Celtya. Todos os direitos reservados. Forjado nas Sombras.</div>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  LINK DO TRAILER NO YOUTUBE
+// ═══════════════════════════════════════════════════════════════
+const TRAILER_YOUTUBE_URL = "https://www.youtube.com/@FanwareStudio";
+// ═══════════════════════════════════════════════════════════════
+
+/* ─────────────────────────────────────────────────────────
+   WELCOME SCREEN
+───────────────────────────────────────────────────────── */
+(function initWelcome() {
+  const screen = document.getElementById('welcome-screen');
+  const skip   = document.getElementById('wSkip');
+
+  // Generate floating particles
+  const pCont = document.getElementById('wParticles');
+  for (let i = 0; i < 50; i++) {
+    const p = document.createElement('div');
+    p.className = 'w-particle';
+    const size = Math.random() * 3 + 1;
+    p.style.cssText =
+      'left:' + (Math.random()*100) + '%;' +
+      'width:' + size + 'px;height:' + size + 'px;' +
+      '--drift:' + ((Math.random()-0.5)*180) + 'px;' +
+      'animation-duration:' + (Math.random()*10+7) + 's;' +
+      'animation-delay:' + (Math.random()*-14) + 's;';
+    pCont.appendChild(p);
+  }
+
+  // Spark burst — fires every ~600ms
+  const sparkCont = document.getElementById('wSparks');
+  function fireSparks() {
+    for (let i = 0; i < 14; i++) {
+      const s = document.createElement('div');
+      s.className = 'w-spark';
+      const angle = Math.random() * Math.PI * 2;
+      const dist  = Math.random() * 220 + 60;
+      s.style.cssText =
+        '--sx:' + (Math.cos(angle)*dist) + 'px;' +
+        '--sy:' + (Math.sin(angle)*dist) + 'px;' +
+        'animation-duration:' + (Math.random()*800+600) + 'ms;' +
+        'animation-delay:' + (Math.random()*200) + 'ms;' +
+        'width:' + (Math.random()*3+1) + 'px;' +
+        'height:' + (Math.random()*3+1) + 'px;';
+      sparkCont.appendChild(s);
+      setTimeout(() => s.remove(), 1200);
+    }
+  }
+  // Initial burst immediately, then every 700ms
+  fireSparks();
+  const sparkInterval = setInterval(fireSparks, 700);
+
+  function dismissWelcome() {
+    clearInterval(sparkInterval);
+    screen.classList.add('fade-out');
+    // After transition ends, remove from DOM so it doesn't block events
+    screen.addEventListener('transitionend', () => screen.remove(), { once: true });
+  }
+
+  // Auto-dismiss after 4.5 s (progress bar matches 4s + 0.5s buffer)
+  const autoTimer = setTimeout(dismissWelcome, 10000);
+
+  // Skip button
+  skip.addEventListener('click', () => {
+    clearTimeout(autoTimer);
+    dismissWelcome();
+  });
+  skip.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { clearTimeout(autoTimer); dismissWelcome(); }
+  });
+})();
+
+/* ─────────────────────────────────────────────────────────
+   TRAILER BLOCK
+───────────────────────────────────────────────────────── */
+(function buildTrailer() {
+  const block = document.getElementById('trailerBlock');
+
+  // ── Heading button (always visible, responsive) ──
+  const headingBtn = document.createElement('a');
+  headingBtn.className = 'trailer-heading-btn';
+  headingBtn.href = TRAILER_YOUTUBE_URL;
+  headingBtn.target = '_blank';
+  headingBtn.rel = 'noopener noreferrer';
+  headingBtn.setAttribute('aria-label', 'Assistir Trailer no YouTube');
+  headingBtn.innerHTML =
+    '<span class="thb-icon">&#9654;</span>' +
+    '<span>&#10022;&nbsp; Assistir Trailer &nbsp;&#10022;</span>';
+  block.appendChild(headingBtn);
+
+  // ── Animated player ──
+  const wrap = document.createElement('div');
+  wrap.className = 'trailer-wrap';
+  wrap.setAttribute('role', 'button');
+  wrap.setAttribute('aria-label', 'Assistir trailer no YouTube');
+
+  ['tl','tr','bl','br'].forEach(pos => {
+    const c = document.createElement('div');
+    c.className = 'trailer-corner trailer-corner-' + pos;
+    wrap.appendChild(c);
+  });
+
+  const frame = document.createElement('div');
+  frame.className = 'trailer-frame';
+
+  const rune = document.createElement('div');
+  rune.className = 'trailer-rune';
+  rune.textContent = 'ᚲ';
+  frame.appendChild(rune);
+
+  const particles = document.createElement('div');
+  particles.className = 'trailer-particles';
+  for (let i = 0; i < 18; i++) {
+    const p = document.createElement('div');
+    p.className = 'trailer-particle';
+    const size = Math.random() * 2.5 + 1;
+    p.style.cssText =
+      'left:' + (Math.random()*100) + '%;' +
+      'width:' + size + 'px;height:' + size + 'px;' +
+      '--drift:' + ((Math.random()-0.5)*120) + 'px;' +
+      'animation-duration:' + (Math.random()*8+6) + 's;' +
+      'animation-delay:' + (Math.random()*-12) + 's;';
+    particles.appendChild(p);
+  }
+  frame.appendChild(particles);
+
+  const vig = document.createElement('div');
+  vig.className = 'trailer-vignette';
+  frame.appendChild(vig);
+
+  const btn = document.createElement('div');
+  btn.className = 'trailer-play-btn';
+  btn.innerHTML = '&#9654;';
+  frame.appendChild(btn);
+
+  const label = document.createElement('div');
+  label.className = 'trailer-label';
+  label.textContent = 'Assistir Trailer';
+  frame.appendChild(label);
+
+  wrap.appendChild(frame);
+  block.appendChild(wrap);
+
+  wrap.addEventListener('click', function() {
+    btn.classList.add('pressed');
+    setTimeout(function() {
+      window.open(TRAILER_YOUTUBE_URL, '_blank', 'noopener,noreferrer');
+      setTimeout(function() { btn.classList.remove('pressed'); }, 300);
+    }, 180);
+  });
+})();
+
+/* ─────────────────────────────────────────────────────────
+   CURSOR
+───────────────────────────────────────────────────────── */
+const cursor = document.getElementById('cursor');
+const cursorDot = document.getElementById('cursorDot');
+let mouseX = 0, mouseY = 0, curX = 0, curY = 0;
+document.addEventListener('mousemove', e => {
+  mouseX = e.clientX; mouseY = e.clientY;
+  cursorDot.style.left = mouseX + 'px'; cursorDot.style.top = mouseY + 'px';
+});
+function animateCursor() {
+  curX += (mouseX - curX) * 0.15; curY += (mouseY - curY) * 0.15;
+  cursor.style.left = curX + 'px'; cursor.style.top = curY + 'px';
+  requestAnimationFrame(animateCursor);
+}
+animateCursor();
+document.querySelectorAll('a, button, [role="button"]').forEach(el => {
+  el.addEventListener('mouseenter', () => { cursor.style.transform = 'translate(-50%,-50%) scale(2)'; cursor.style.borderColor = '#ff1a35'; });
+  el.addEventListener('mouseleave', () => { cursor.style.transform = 'translate(-50%,-50%) scale(1)'; cursor.style.borderColor = 'var(--crimson)'; });
+});
+
+/* ─────────────────────────────────────────────────────────
+   SCROLL BAR + NAV
+───────────────────────────────────────────────────────── */
+window.addEventListener('scroll', () => {
+  const scrollTop = window.scrollY;
+  const docH = document.body.scrollHeight - window.innerHeight;
+  document.getElementById('scrollBar').style.width = (scrollTop / docH * 100) + '%';
+  document.getElementById('navbar').classList.toggle('scrolled', scrollTop > 60);
+});
+
+/* ─────────────────────────────────────────────────────────
+   HERO PARTICLES
+───────────────────────────────────────────────────────── */
+const particlesEl = document.getElementById('particles');
+for (let i = 0; i < 40; i++) {
+  const p = document.createElement('div');
+  p.className = 'particle';
+  const size = Math.random() * 3 + 1;
+  p.style.cssText =
+    'left:' + (Math.random()*100) + '%;' +
+    'width:' + size + 'px;height:' + size + 'px;' +
+    '--drift:' + ((Math.random()-0.5)*200) + 'px;' +
+    'animation-duration:' + (Math.random()*10+8) + 's;' +
+    'animation-delay:' + (Math.random()*-15) + 's;' +
+    'opacity:' + (Math.random()*0.8) + ';';
+  particlesEl.appendChild(p);
+}
+
+/* ─────────────────────────────────────────────────────────
+   SCROLL REVEAL
+───────────────────────────────────────────────────────── */
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal, .feature-card').forEach(el => observer.observe(el));
+
+/* ─────────────────────────────────────────────────────────
+   HAMBURGER
+───────────────────────────────────────────────────────── */
+document.getElementById('hamburger').addEventListener('click', () => {
+  document.getElementById('mobileMenu').classList.toggle('open');
+});
+function closeMobile() { document.getElementById('mobileMenu').classList.remove('open'); }
+
+/* ─────────────────────────────────────────────────────────
+   PARALLAX
+───────────────────────────────────────────────────────── */
+window.addEventListener('scroll', () => {
+  const y = window.scrollY;
+  const d = document.querySelector('.dragon-bg');
+  const dl = document.querySelector('.dragon-bg-left');
+  if (d) d.style.transform = 'translateY(' + (y*0.15) + 'px)';
+  if (dl) dl.style.transform = 'scaleX(-1) translateY(' + (y*0.1) + 'px)';
+});
+</script>
+</body>
+</html>
